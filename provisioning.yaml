@@ -1,0 +1,120 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: true
+
+  tasks:
+
+   - name: Install WSL2 dependencies Docker 
+     apt:
+      update_cache: yes
+      install_recommends: no
+      pkg:
+       - apt-transport-https
+       - ca-certificates
+       - curl
+       - gnupg2
+     become: yes
+    
+   - name: Pre-config docker service from local account.
+     shell: |
+      source /etc/os-release && \
+      curl -fsSL https://download.docker.com/linux/${ID}/gpg | sudo apt-key add && \
+      echo "deb [arch=amd64] https://download.docker.com/linux/${ID} ${VERSION_CODENAME} stable" | sudo tee /etc/apt/sources.list.d/docker.list
+     args:
+       executable: /usr/bin/bash 
+
+   - name: Install WSL2 Docker package for Ubuntu-20.04
+     apt:
+      update_cache: yes
+      pkg:
+       - docker-ce
+       - docker-ce-cli 
+       - containerd.io
+     become: yes
+
+
+   - name: Add local user to docker group
+     command: usermod -aG docker {{ local_wsl_user }} 
+     become: yes
+
+
+   - name: Check that docker /mnt/wsl/shared-docker folder exist
+     stat:
+        path: /mnt/wsl/shared-docker
+     register: stat_docker_mnt_result
+
+   - name: Post-config docker service from local account.
+     shell: |
+      DOCKER_DIR=/mnt/wsl/shared-docker && \
+      sudo mkdir -pm o=,ug=rwx "$DOCKER_DIR" && \
+      sudo chgrp docker "$DOCKER_DIR"     
+     args:
+       executable: /usr/bin/bash
+
+     when: not stat_docker_mnt_result.stat.exists
+   
+   - name: Check that docker /etc/docker folder exist
+     stat:
+        path: /etc/docker
+     register: stat_docker_etc_result
+
+   - name: Create /etc/docker folder
+     command: mkdir /etc/docker
+     when: not stat_docker_etc_result.stat.exists
+     become: yes
+ 
+   - name: Copy daemon.json for docker service background.
+     copy:
+       src: files/daemon.json
+       dest: /etc/docker/daemon.json
+       force: yes
+     become: yes
+
+   - name: Read local user .bashrc
+     shell: cat /home/{{ local_wsl_user }}/.bashrc
+     register: bashrc_local
+
+
+   - name: Add lines to .bashrc for docker service background.
+     shell: cat files/.bashrc >> /home/{{ local_wsl_user }}/.bashrc
+     args:
+       executable: /usr/bin/bash
+     when: bashrc_local.stdout.find('if [ ! -S "$DOCKER_SOCK" ]; then') == -1
+#     debug: msg="lines exists"
+
+  
+   - name: Docker pull MySQL container
+     docker_image:
+       name: mysql/mysql-server:latest 
+       source: pull
+
+
+
+   - name: Check that MySQL /conf.d folder exist
+     stat:
+        path: /home/{{ local_wsl_user }}/{{ ansible_nodename }}_{{ ansible_os_family }}_mysql/conf.d
+     register: stat_mysql_confd_result
+
+   - name: Create MySQL confd folder
+     command: mkdir -p /home/{{ local_wsl_user }}/{{ ansible_nodename }}_{{ ansible_os_family }}_mysql/conf.d
+     when: not stat_mysql_confd_result.stat.exists
+     become: yes
+
+
+   - name: MySQL get root password from container logs
+     shell: "docker logs {{ ansible_nodename }}_{{ ansible_os_family }}_mysql 2>&1 | grep GENERATED | sed -E 's/.*\: //''"
+     args:
+       executable: /usr/bin/bash
+     register: mysql_root_passwd
+
+
+   - name: Create mysql-run.sh file to start MySQL container
+     template:
+      src: mysql-run.j2   
+      dest: /home/{{ local_wsl_user }}/mysql-run.sh
+      backup: true
+      mode: '0755'
+     
+
+        

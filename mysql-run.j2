@@ -1,0 +1,6 @@
+docker run \
+--detach \
+--name="{{ ansible_nodename }}_{{ ansible_os_family }}_mysql" \
+--env="MYSQL_ROOT_PASSWORD={{ password_db }}" \
+--volume=./["{{ ansible_nodename }}_{{ ansible_os_family }}_mysql"/conf.d:/etc/mysql/conf.d \
+mysql/mysql-server:latest
