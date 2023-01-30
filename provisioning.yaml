@@ -127,7 +127,7 @@
      become: yes
    
 
-   - name: remove container
+   - name: Remove container if it was created before.
      docker_container:
       name: "{{ ansible_nodename }}_{{ ansible_os_family }}_mysql"
       state: absent
