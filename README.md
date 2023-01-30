@@ -1,4 +1,4 @@
-# SkillFactory-B6.4.1-Ansible-Playobooks-Docker-MSql
+# SkillFactory-B6.4.1-Ansible-Playobooks-Docker-MySql
 
 ## Задание:
 
