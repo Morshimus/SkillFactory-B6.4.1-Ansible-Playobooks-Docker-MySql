@@ -39,5 +39,5 @@ function createWslMySQLDockerContainer {
     
     wsl -d Ubuntu-20.04 -u $user -e ansible-playbook --extra-vars "local_wsl_user=$user password_db=$UnsecurePassword "  $path/provisioning.yaml
 
-    wsl -d Ubuntu-20.04 -u $user -e docker exec -ti 
+    wsl -d Ubuntu-20.04 -u $user -e "docker exec -ti {0} mysql -uroot -p$UnsecurePassword"
 }

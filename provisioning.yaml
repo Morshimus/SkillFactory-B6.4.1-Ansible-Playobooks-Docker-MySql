@@ -126,7 +126,14 @@
        force: yes
      become: yes
    
-   
+
+   - name: remove container
+     docker_container:
+      name: "{{ ansible_nodename }}_{{ ansible_os_family }}_mysql"
+      state: absent
+     environment:
+        DOCKER_HOST:  unix:///mnt/wsl/shared-docker/docker.sock
+
    - name: Run MySQL Container 
      shell: bash /home/{{ local_wsl_user }}/mysql-run.sh
      environment:
