@@ -44,7 +44,7 @@ function createWslMySQLDockerContainer {
     
     $passArg = "-p$unsecurePassword"
 
-    Wait-Event -Timeout 40
+    Wait-Event -Timeout 30
 
     wsl -d Ubuntu-20.04 -u $user -e docker -H unix:///mnt/wsl/shared-docker/docker.sock exec -it $latest mysql -uroot $passArg
 
