@@ -93,20 +93,20 @@
 
    - name: Check that MySQL /conf.d folder exist
      stat:
-        path: /home/{{ local_wsl_user }}/{{ ansible_nodename }}_{{ ansible_os_family }}_mysql/conf.d
+        path: /home/{{ local_wsl_user }}/{{ ansible_nodename|lower }}_{{ ansible_os_family|lower }}_mysql/conf.d
      register: stat_mysql_confd_result
 
    - name: Create MySQL confd folder
-     command: mkdir -p /home/{{ local_wsl_user }}/{{ ansible_nodename }}_{{ ansible_os_family }}_mysql/conf.d
+     command:  mkdir -p /home/{{ local_wsl_user }}/{{ ansible_nodename|lower }}_{{ ansible_os_family|lower }}_mysql/conf.d
      when: not stat_mysql_confd_result.stat.exists
      become: yes
 
 
-   - name: MySQL get root password from container logs
-     shell: "docker logs {{ ansible_nodename }}_{{ ansible_os_family }}_mysql 2>&1 | grep GENERATED | sed -E 's/.*\: //''"
-     args:
-       executable: /usr/bin/bash
-     register: mysql_root_passwd
+#   - name: MySQL get root password from container logs
+#     shell: "docker logs {{ ansible_nodename }}_{{ ansible_os_family }}_mysql 2>&1 | grep GENERATED | sed -E 's/.*\: //''"
+#     args:
+#       executable: /usr/bin/bash
+#     register: mysql_root_passwd
 
 
    - name: Create mysql-run.sh file to start MySQL container
@@ -115,6 +115,17 @@
       dest: /home/{{ local_wsl_user }}/mysql-run.sh
       backup: true
       mode: '0755'
+    
+   - name: Copy daemon.json for docker service background.
+     copy:
+       src: files/my-custom.cnf
+       dest: /home/{{ local_wsl_user }}/{{ ansible_nodename|lower }}_{{ ansible_os_family|lower }}_mysql/conf.d/my-custom.cnf
+       force: yes
+     become: yes
+   
+   
+   - name: Run MySQL Container 
+     shell: bash /home/{{ local_wsl_user }}/mysql-run.sh
      
 
         
