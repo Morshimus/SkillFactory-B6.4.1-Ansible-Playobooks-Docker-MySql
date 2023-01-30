@@ -28,12 +28,16 @@ function createWslMySQLDockerContainer {
         [Parameter(Mandatory=$true,Position=0)]
         [string]$user,
         [Parameter(Mandatory=$false,Position=1)]
-        [Securestring]$dbPassword = $(Read-Host 'What is your password?' -AsSecureString)
+        [SecureString]$dbPassword = $(Read-Host 'What passowrd you want set to db?' -AsSecureString)
     )
     
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($dbPassword)
+    $UnsecurePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+
     $path = $($(Get-Location).path -replace "\\", "/") -replace "C:","/mnt/c"
     
-    wsl -d Ubuntu-20.04 -u $user -e ansible-playbook --extra-vars 'local_wsl_user=$user password_db=$dbPassword '  $path/provisioning.yaml
+    
+    wsl -d Ubuntu-20.04 -u $user -e ansible-playbook --extra-vars "local_wsl_user=$user password_db=$UnsecurePassword "  $path/provisioning.yaml
 
     wsl -d Ubuntu-20.04 -u $user -e docker exec -ti 
 }

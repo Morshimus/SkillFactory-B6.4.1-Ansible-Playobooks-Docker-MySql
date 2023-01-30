@@ -5,6 +5,7 @@
 
   tasks:
 
+  
    - name: Install WSL2 dependencies Docker 
      apt:
       update_cache: yes
@@ -86,8 +87,10 @@
   
    - name: Docker pull MySQL container
      docker_image:
-       name: mysql/mysql-server:latest 
+       name: mysql/mysql-server:latest
        source: pull
+     environment:
+         DOCKER_HOST:  unix:///mnt/wsl/shared-docker/docker.sock 
 
 
 
@@ -126,6 +129,8 @@
    
    - name: Run MySQL Container 
      shell: bash /home/{{ local_wsl_user }}/mysql-run.sh
+     environment:
+        DOCKER_HOST:  unix:///mnt/wsl/shared-docker/docker.sock 
      
 
         
